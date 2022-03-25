@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import medmnist
 from matplotlib.backends.backend_pdf import PdfPages
 
+
 def task2():
     """ Bayesian Denoising - 2D Toytask
 
@@ -39,6 +40,7 @@ def task2():
         a.legend()
 
     return fig
+
 
 def task3():
     """ Bayesian Image Denoising
@@ -69,6 +71,7 @@ def task3():
     """ End of your code
     """
     return fig
+
 
 if __name__ == '__main__':
     tasks = [task2, task3]
