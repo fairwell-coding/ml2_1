@@ -28,24 +28,39 @@ def task2():
     """
 
     N = 900
+    n = int(N / 3)
 
     mu1 = [0.0, 0.0]
     mu2 = [0.0, 1.5]
     mu3 = [1.5, 1.5]
     sigma = np.full((2, 2), [[0.075, 0], [0, 0.075]])
 
-    y1 = np.random.multivariate_normal(mu1, sigma, int(N / 3))
-    y2 = np.random.multivariate_normal(mu2, sigma, int(N / 3))
-    y3 = np.random.multivariate_normal(mu3, sigma, int(N / 3))
+    Y1 = np.random.multivariate_normal(mu1, sigma, n)
+    Y2 = np.random.multivariate_normal(mu2, sigma, n)
+    Y3 = np.random.multivariate_normal(mu3, sigma, n)
 
-    h1 = 1
+    h1 = 5
     h2 = 1
     h3 = 1
 
-    kde1 = __calculate_kde(N, h1, 0, y1)
-    kde2 = __calculate_kde(N, h2, 0, y2)
-    kde3 = __calculate_kde(N, h3, 0, y3)
+    kde1 = np.ndarray((n, n))
 
+    for i in range(Y1.shape[0]):
+        kde1[i, :] = __calculate_kde(Y1[i], Y1, h1)
+
+    # kde1 = __calculate_kde(N, h1, 0, y1)
+    # kde2 = __calculate_kde(N, h2, 0, y2)
+    # kde3 = __calculate_kde(N, h3, 0, y3)
+
+    x_min = 0
+    x_max = 1
+    y_min = 0
+    y_max = 1
+    x1, x2 = np.meshgrid(np.linspace(x_min, x_max, 300), np.linspace(y_min, y_max, 300))
+    ax[1].contourf(x1, x2, kde1, cmap='gist_rainbow')
+
+    # x = kde1[:, 0].reshape(-1, 1)
+    # y = kde1[:, 1].reshape(-1, 1)
 
     """ End of your code
     """
@@ -59,10 +74,14 @@ def task2():
     return fig
 
 
-def __calculate_kde(N, h, mu, y):
-    # kd = 1 / N * np.sum(1 / (2 * np.pi * h ** 2) * np.exp(- (y - mu) ** 2 / (2 * h ** 2)))
-    kde = 1 / (2 * np.pi * h ** 2) * np.exp(- (y - mu) ** 2 / (2 * h ** 2))
-    return kde
+def __calculate_kde(y, Y, h):
+    return 1 / Y.shape[0] * np.sum(1 / (2 * np.pi * h ** 2) * np.exp(- (y - Y) ** 2 / (2 * h ** 2)))
+
+
+# def __calculate_kde(N, h, mu, y):
+#     # kd = 1 / N * np.sum(1 / (2 * np.pi * h ** 2) * np.exp(- (y - mu) ** 2 / (2 * h ** 2)))
+#     kde = 1 / (2 * np.pi * h ** 2) * np.exp(- (y - mu) ** 2 / (2 * h ** 2))
+#     return kde
 
 
 def task3():
