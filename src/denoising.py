@@ -26,9 +26,26 @@ def task2():
 
     """ Start of your code
     """
-    h1 = None # don't forget to set the 3 chosen values h1,h2,h3 in your code
-    h2 = None
-    h3 = None
+
+    N = 900
+
+    mu1 = [0.0, 0.0]
+    mu2 = [0.0, 1.5]
+    mu3 = [1.5, 1.5]
+    sigma = np.full((2, 2), [[0.075, 0], [0, 0.075]])
+
+    y1 = np.random.multivariate_normal(mu1, sigma, int(N / 3))
+    y2 = np.random.multivariate_normal(mu2, sigma, int(N / 3))
+    y3 = np.random.multivariate_normal(mu3, sigma, int(N / 3))
+
+    h1 = 1
+    h2 = 1
+    h3 = 1
+
+    kde1 = __calculate_kde(N, h1, 0, y1)
+    kde2 = __calculate_kde(N, h2, 0, y2)
+    kde3 = __calculate_kde(N, h3, 0, y3)
+
 
     """ End of your code
     """
@@ -40,6 +57,12 @@ def task2():
         a.legend()
 
     return fig
+
+
+def __calculate_kde(N, h, mu, y):
+    # kd = 1 / N * np.sum(1 / (2 * np.pi * h ** 2) * np.exp(- (y - mu) ** 2 / (2 * h ** 2)))
+    kde = 1 / (2 * np.pi * h ** 2) * np.exp(- (y - mu) ** 2 / (2 * h ** 2))
+    return kde
 
 
 def task3():
