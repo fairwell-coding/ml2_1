@@ -39,49 +39,48 @@ def task2():
     Y2 = np.random.multivariate_normal(mu2, sigma, n)
     Y3 = np.random.multivariate_normal(mu3, sigma, n)
 
-    h1 = 5
-    h2 = 1
-    h3 = 1
+    Y = np.vstack((Y1, Y2, Y3))
 
-    kde1 = np.ndarray((n, n))
+    h1 = 1e-2
+    h2 = 1e-1
+    h3 = 4e-1
 
-    for i in range(Y1.shape[0]):
-        kde1[i, :] = __calculate_kde(Y1[i], Y1, h1)
+    # y = np.linspace(-2., 2., N)
 
-    # kde1 = __calculate_kde(N, h1, 0, y1)
-    # kde2 = __calculate_kde(N, h2, 0, y2)
-    # kde3 = __calculate_kde(N, h3, 0, y3)
+    x = np.linspace(-3, 3, 100)
+    y = np.linspace(-3, 3, 100)
+    xx, yy = np.meshgrid(x, y)
 
-    x_min = 0
-    x_max = 1
-    y_min = 0
-    y_max = 1
-    x1, x2 = np.meshgrid(np.linspace(x_min, x_max, 300), np.linspace(y_min, y_max, 300))
-    ax[1].contourf(x1, x2, kde1, cmap='gist_rainbow')
+    # plot with different bandwidths h
+    fig, ax = plt.subplots(1, 3, figsize=(14, 5))
+    for i, h in enumerate([h1, h2, h3]):
+        ax[i].plot(Y[:, 0], Y[:, 1], 'o')
+        ax[i].contourf(xx, yy, __calculate_kde(yy, Y, h), cmap='gist_rainbow')
+        ax[i].set_title('bandwidth h=%.2f' % h)
+    plt.show()
 
-    # x = kde1[:, 0].reshape(-1, 1)
-    # y = kde1[:, 1].reshape(-1, 1)
+    # ax[1].contourf(x, y, , cmap='gist_rainbow')
 
     """ End of your code
     """
 
-    ax[1].set_title(r'KDE Prior $h=$'+str(h1))
-    ax[2].set_title(r'KDE Prior $h=$'+str(h2))
-    ax[3].set_title(r'KDE Prior $h=$'+str(h3))
-    for a in ax.reshape(-1):
-        a.legend()
+    # ax[1].set_title(r'KDE Prior $h=$'+str(h1))
+    # ax[2].set_title(r'KDE Prior $h=$'+str(h2))
+    # ax[3].set_title(r'KDE Prior $h=$'+str(h3))
+    # for a in ax.reshape(-1):
+    #     a.legend()
 
     return fig
 
 
 def __calculate_kde(y, Y, h):
-    return 1 / Y.shape[0] * np.sum(1 / (2 * np.pi * h ** 2) * np.exp(- (y - Y) ** 2 / (2 * h ** 2)))
+    kde = np.zeros_like(y)
 
+    for i in np.arange(y.shape[0]):
+        for j in np.arange(y.shape[1]):
+            kde[i, j] = 1 / Y.shape[0] * np.sum(1 / (2 * np.pi * h ** 2) * np.exp(- (y[i, j] - Y) ** 2 / (2 * h ** 2)))  # use KDE based on Gaussian kernel to create PDF
 
-# def __calculate_kde(N, h, mu, y):
-#     # kd = 1 / N * np.sum(1 / (2 * np.pi * h ** 2) * np.exp(- (y - mu) ** 2 / (2 * h ** 2)))
-#     kde = 1 / (2 * np.pi * h ** 2) * np.exp(- (y - mu) ** 2 / (2 * h ** 2))
-#     return kde
+    return kde
 
 
 def task3():
