@@ -41,12 +41,22 @@ def task2():
     xx, yy = np.meshgrid(x, y)
     zz = xx + yy
 
+    # xx.reshape((100, 100, 1))
+    # yy.reshape((100, 100, 1))
+    grid_positions = np.concatenate((xx.reshape((100, 100, 1)), yy.reshape((100, 100, 1))), axis=2)
+
+    # positions = np.vstack([xx.ravel(), yy.ravel()])
+    # values = np.vstack([xx, yy])
+
+
     fig, ax = plt.subplots(1, 3, figsize=(14, 5))
     for i, h in enumerate([h1, h2, h3]):
         ax[i].plot(Y[:n, 0], Y[:n, 1], 'o', markersize="3", color="orange")
         ax[i].plot(Y[n:2*n, 0], Y[n:2*n, 1], 'o', markersize="3", color="green")
         ax[i].plot(Y[2*n:, 0], Y[2*n:, 1], 'o', markersize="3", color="blue")
-        ax[i].contourf(x, y, __calculate_kde(zz, Y, h), cmap='coolwarm')
+        ax[i].contourf(xx, yy, __calculate_kde(zz, Y, h), cmap='coolwarm')
+        kde_result = __calculate_kde(grid_positions, Y, h)
+        # ax[i].contourf(xx, yy, kde_result, colors='k')
         ax[i].set_title(r'KDE Prior $h=$' + str(h))
     plt.show()
 
@@ -69,11 +79,13 @@ def __create_dataset_Y(n):
 
 
 def __calculate_kde(y, Y, h):
-    kde = np.zeros_like(y)
+    kde = np.ndarray((y.shape[0], y.shape[1]))
 
     for i in np.arange(y.shape[0]):
         for j in np.arange(y.shape[1]):
-            kde[i, j] = 1 / Y.shape[0] * np.sum(1 / (2 * np.pi * h ** 2) * np.exp(- (y[i, j] - Y) ** 2 / (2 * h ** 2)))  # use KDE based on Gaussian kernel to create PDF
+            # kde[i, j] = 1 / Y.shape[0] * np.sum(1 / (2 * np.pi * h ** 2) * np.exp(- (y[i, j] - Y) ** 2 / (2 * h ** 2)))  # use KDE based on Gaussian kernel to create PDF
+            kde[i, j] = 1 / Y.shape[0] * np.sum(1 / (2 * np.pi * h ** 2) * np.exp(- np.linalg.norm(y[i, j] - Y, axis=1, ord=2) ** 2 / (2 * h ** 2)))  # use KDE based on Gaussian kernel to
+            # create PDF
 
     return kde
 
