@@ -30,47 +30,42 @@ def task2():
     N = 900
     n = int(N / 3)
 
-    mu1 = [0.0, 0.0]
-    mu2 = [0.0, 1.5]
-    mu3 = [1.5, 1.5]
-    sigma = np.full((2, 2), [[0.075, 0], [0, 0.075]])
-
-    Y1 = np.random.multivariate_normal(mu1, sigma, n)
-    Y2 = np.random.multivariate_normal(mu2, sigma, n)
-    Y3 = np.random.multivariate_normal(mu3, sigma, n)
-
-    Y = np.vstack((Y1, Y2, Y3))
+    Y = __create_dataset_Y(n)
 
     h1 = 1e-2
     h2 = 1e-1
-    h3 = 4e-1
+    h3 = 1
 
-    # y = np.linspace(-2., 2., N)
-
-    x = np.linspace(-3, 3, 100)
-    y = np.linspace(-3, 3, 100)
+    x = np.linspace(-1, 2.5, 100)
+    y = np.linspace(-1, 2.5, 100)
     xx, yy = np.meshgrid(x, y)
+    zz = xx + yy
 
-    # plot with different bandwidths h
     fig, ax = plt.subplots(1, 3, figsize=(14, 5))
     for i, h in enumerate([h1, h2, h3]):
-        ax[i].plot(Y[:, 0], Y[:, 1], 'o')
-        ax[i].contourf(xx, yy, __calculate_kde(yy, Y, h), cmap='gist_rainbow')
-        ax[i].set_title('bandwidth h=%.2f' % h)
+        ax[i].plot(Y[:n, 0], Y[:n, 1], 'o', markersize="3", color="orange")
+        ax[i].plot(Y[n:2*n, 0], Y[n:2*n, 1], 'o', markersize="3", color="green")
+        ax[i].plot(Y[2*n:, 0], Y[2*n:, 1], 'o', markersize="3", color="blue")
+        ax[i].contourf(x, y, __calculate_kde(zz, Y, h), cmap='coolwarm')
+        ax[i].set_title(r'KDE Prior $h=$' + str(h))
     plt.show()
-
-    # ax[1].contourf(x, y, , cmap='gist_rainbow')
 
     """ End of your code
     """
 
-    # ax[1].set_title(r'KDE Prior $h=$'+str(h1))
-    # ax[2].set_title(r'KDE Prior $h=$'+str(h2))
-    # ax[3].set_title(r'KDE Prior $h=$'+str(h3))
-    # for a in ax.reshape(-1):
-    #     a.legend()
-
     return fig
+
+
+def __create_dataset_Y(n):
+    mu1 = [0.0, 0.0]
+    mu2 = [0.0, 1.5]
+    mu3 = [1.5, 1.5]
+    sigma = np.full((2, 2), [[0.075, 0], [0, 0.075]])
+    Y1 = np.random.multivariate_normal(mu1, sigma, n)
+    Y2 = np.random.multivariate_normal(mu2, sigma, n)
+    Y3 = np.random.multivariate_normal(mu3, sigma, n)
+    Y = np.vstack((Y1, Y2, Y3))
+    return Y
 
 
 def __calculate_kde(y, Y, h):
