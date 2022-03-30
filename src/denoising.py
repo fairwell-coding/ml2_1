@@ -1,5 +1,4 @@
 """ Python code submission file.
-
 IMPORTANT:
 - Do not include any additional python packages.
 - Do not change the interface and return values of the task functions.
@@ -15,7 +14,6 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 def task2():
     """ Bayesian Denoising - 2D Toytask
-
         Requirements for the plots:
         - ax[0] should contain training data, the test data point, and the conditional mean/MAP using a Dirac prior.
         - ax[1-3] should contain training data, the test data point, the estimated pdf, and the conditional mean/MAP using the KDE prior for 3 different bandwidths h. 
@@ -32,21 +30,23 @@ def task2():
 
     Y = __create_dataset_Y(n)
 
-    h1 = 1e-2
-    h2 = 1e-1
+    h1 = 0.25
+    h2 = 0.5
     h3 = 1
 
-    x = np.linspace(-1, 2.5, 100)
-    y = np.linspace(-1, 2.5, 100)
+    x = np.linspace(-2 ,3, 100)
+    y = np.linspace(-2, 3, 100)
     xx, yy = np.meshgrid(x, y)
-    zz = xx + yy
+
+    grid_positions = np.concatenate((xx.reshape((100, 100, 1)), yy.reshape((100, 100, 1))), axis=2)
 
     fig, ax = plt.subplots(1, 3, figsize=(14, 5))
     for i, h in enumerate([h1, h2, h3]):
-        ax[i].plot(Y[:n, 0], Y[:n, 1], 'o', markersize="3", color="orange")
-        ax[i].plot(Y[n:2*n, 0], Y[n:2*n, 1], 'o', markersize="3", color="green")
-        ax[i].plot(Y[2*n:, 0], Y[2*n:, 1], 'o', markersize="3", color="blue")
-        ax[i].contourf(x, y, __calculate_kde(zz, Y, h), cmap='coolwarm')
+        ax[i].plot(Y[:n, 0], Y[:n, 1], 'o', markersize="1", color="orange")
+        ax[i].plot(Y[n:2*n, 0], Y[n:2*n, 1], 'o', markersize="1", color="green")
+        ax[i].plot(Y[2*n:, 0], Y[2*n:, 1], 'o', markersize="1", color="blue")
+        kde_result = __calculate_kde(grid_positions, Y, h)
+        ax[i].contourf(xx, yy, kde_result)
         ax[i].set_title(r'KDE Prior $h=$' + str(h))
     plt.show()
 
@@ -55,7 +55,10 @@ def task2():
 
     return fig
 
-
+def logsumexp_stable(x):
+    xmax = np.max(x)
+    return xmax + np.log(np.sum(np.exp(x-xmax)))
+    
 def __create_dataset_Y(n):
     mu1 = [0.0, 0.0]
     mu2 = [0.0, 1.5]
@@ -69,18 +72,18 @@ def __create_dataset_Y(n):
 
 
 def __calculate_kde(y, Y, h):
-    kde = np.zeros_like(y)
+    kde = np.ndarray((y.shape[0], y.shape[1]))
 
     for i in np.arange(y.shape[0]):
         for j in np.arange(y.shape[1]):
-            kde[i, j] = 1 / Y.shape[0] * np.sum(1 / (2 * np.pi * h ** 2) * np.exp(- (y[i, j] - Y) ** 2 / (2 * h ** 2)))  # use KDE based on Gaussian kernel to create PDF
-
+            #kde[i, j] = 1 / Y.shape[0] * logsumexp_stable(1 / (2 * np.pi * h ** 2) * np.exp(- (y[i, j] - Y) ** 2 / (2 * h ** 2)))  # use KDE based on Gaussian kernel to create PDF
+            kde[i, j] = 1 / Y.shape[0] * logsumexp_stable(1 / (2 * np.pi * h ** 2) * np.exp(- np.linalg.norm(y[i, j] - Y, axis=1, ord=2) / (2 * h ** 2)))  # use KDE based on Gaussian kernel to
+            # create PDF
     return kde
 
 
 def task3():
     """ Bayesian Image Denoising
-
         Requirements for the plots:
         - the first row should show your results for \sigma^2=0.1
         - the second row should show your results for \sigma^2=1.
