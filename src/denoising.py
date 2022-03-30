@@ -1,4 +1,5 @@
 """ Python code submission file.
+
 IMPORTANT:
 - Do not include any additional python packages.
 - Do not change the interface and return values of the task functions.
@@ -14,6 +15,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 def task2():
     """ Bayesian Denoising - 2D Toytask
+
         Requirements for the plots:
         - ax[0] should contain training data, the test data point, and the conditional mean/MAP using a Dirac prior.
         - ax[1-3] should contain training data, the test data point, the estimated pdf, and the conditional mean/MAP using the KDE prior for 3 different bandwidths h. 
@@ -28,25 +30,18 @@ def task2():
     N = 900
     n = int(N / 3)
 
-    Y = __create_dataset_Y(n)
-
-    h1 = 0.25
-    h2 = 0.5
-    h3 = 1
-
-    x = np.linspace(-2 ,3, 100)
-    y = np.linspace(-2, 3, 100)
-    xx, yy = np.meshgrid(x, y)
-
-    grid_positions = np.concatenate((xx.reshape((100, 100, 1)), yy.reshape((100, 100, 1))), axis=2)
+    Y = __create_clean_data(n)
+    bandwidths = [0.1, 0.25, 0.5]
+    grid_positions, xx, yy = __create_2d_grid()
 
     fig, ax = plt.subplots(1, 3, figsize=(14, 5))
-    for i, h in enumerate([h1, h2, h3]):
-        ax[i].plot(Y[:n, 0], Y[:n, 1], 'o', markersize="1", color="orange")
-        ax[i].plot(Y[n:2*n, 0], Y[n:2*n, 1], 'o', markersize="1", color="green")
-        ax[i].plot(Y[2*n:, 0], Y[2*n:, 1], 'o', markersize="1", color="blue")
+    for i, h in enumerate(bandwidths):
+        ax[i].plot(Y[:n, 0], Y[:n, 1], 'o', markersize="2", color="firebrick")
+        ax[i].plot(Y[n:2*n, 0], Y[n:2*n, 1], 'o', markersize="2", color="green")
+        ax[i].plot(Y[2*n:, 0], Y[2*n:, 1], 'o', markersize="2", color="blue")
         kde_result = __calculate_kde(grid_positions, Y, h)
-        ax[i].contourf(xx, yy, kde_result)
+        ax[i].contourf(xx, yy, kde_result, cmap='terrain')
+        ax[i].contour(xx, yy, kde_result, colors='gold')
         ax[i].set_title(r'KDE Prior $h=$' + str(h))
     plt.show()
 
@@ -55,20 +50,34 @@ def task2():
 
     return fig
 
-def logsumexp_stable(x):
-    xmax = np.max(x)
-    return xmax + np.log(np.sum(np.exp(x-xmax)))
-    
-def __create_dataset_Y(n):
+
+def __create_2d_grid():
+    num_x = 100
+    num_y = 100
+    x = np.linspace(-1, 2.5, num_x)
+    y = np.linspace(-1, 2.5, num_y)
+    xx, yy = np.meshgrid(x, y)
+    grid_positions = np.concatenate((xx.reshape((num_x, num_y, 1)), yy.reshape((num_x, num_y, 1))), axis=2)
+
+    return grid_positions, xx, yy
+
+
+def __create_clean_data(n):
     mu1 = [0.0, 0.0]
     mu2 = [0.0, 1.5]
     mu3 = [1.5, 1.5]
     sigma = np.full((2, 2), [[0.075, 0], [0, 0.075]])
+
     Y1 = np.random.multivariate_normal(mu1, sigma, n)
     Y2 = np.random.multivariate_normal(mu2, sigma, n)
     Y3 = np.random.multivariate_normal(mu3, sigma, n)
-    Y = np.vstack((Y1, Y2, Y3))
-    return Y
+
+    return np.vstack((Y1, Y2, Y3))
+
+
+def logsumexp_stable(x):
+    xmax = np.max(x)
+    return xmax + np.log(np.sum(np.exp(x-xmax)))
 
 
 def __calculate_kde(y, Y, h):
@@ -76,14 +85,16 @@ def __calculate_kde(y, Y, h):
 
     for i in np.arange(y.shape[0]):
         for j in np.arange(y.shape[1]):
-            #kde[i, j] = 1 / Y.shape[0] * logsumexp_stable(1 / (2 * np.pi * h ** 2) * np.exp(- (y[i, j] - Y) ** 2 / (2 * h ** 2)))  # use KDE based on Gaussian kernel to create PDF
-            kde[i, j] = 1 / Y.shape[0] * logsumexp_stable(1 / (2 * np.pi * h ** 2) * np.exp(- np.linalg.norm(y[i, j] - Y, axis=1, ord=2) / (2 * h ** 2)))  # use KDE based on Gaussian kernel to
+            kde[i, j] = 1 / Y.shape[0] * np.sum(1 / (2 * np.pi * h ** 2) * np.exp(- np.linalg.norm(y[i, j] - Y, axis=1, ord=2) ** 2 / (2 * h ** 2)))  # use KDE based on Gaussian kernel to
             # create PDF
+            # kde[i, j] = 1 / Y.shape[0] * logsumexp_stable(1 / (2 * np.pi * h ** 2) * np.exp(- np.linalg.norm(y[i, j] - Y, axis=1, ord=2) / (2 * h ** 2)))
+
     return kde
 
 
 def task3():
     """ Bayesian Image Denoising
+
         Requirements for the plots:
         - the first row should show your results for \sigma^2=0.1
         - the second row should show your results for \sigma^2=1.
