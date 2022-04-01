@@ -34,25 +34,54 @@ def task2():
     n = int(N / 3)
 
     Y = __create_clean_data(n)
-    bandwidths = [0.1, 0.25, 0.5]
+    bandwidths = [0.1, 0.25, 1]  # [0.1, 0.25, 0.5]
     grid_positions, xx, yy = __create_2d_grid()
     kde_results = []
+    x = __select_out_of_distribution_test_dataset(Y)
 
     fig, ax = plt.subplots(1, 3, figsize=(14, 5))
     for i, h in enumerate(bandwidths):
+        ax[i].plot(x[0], x[1], "x", color="black", markersize="8")
         ax[i].plot(Y[:n, 0], Y[:n, 1], 'o', markersize="2", color="firebrick")
         ax[i].plot(Y[n:2*n, 0], Y[n:2*n, 1], 'o', markersize="2", color="lightgreen")
         ax[i].plot(Y[2*n:, 0], Y[2*n:, 1], 'o', markersize="2", color="blue")
         kde_results.append(__calculate_kde(grid_positions, Y, h))
+
+        Y_expected = np.mean(Y, axis=0)
+        ax[i].plot(Y_expected[0], Y_expected[1], 'H', markersize="8", color="purple")
+
+        # # conditional mean
+        # likelihood = __calculate_likelihood_of_2d_gaussian(x, Y, h).reshape((Y.shape[0], -1))
+        # prior = __calculate_kde(Y, Y, h)
+        # cond_mean = np.sum(Y * prior * likelihood, axis=0) / np.sum(prior * likelihood, axis=0)
+        #
+        # # map
+        # map = np.argmax(prior * likelihood, axis=0)
+        #
+        # # cond_mean = -0.43629,0.09552
+        # # Y[108] = [-0.64147761  0.14104598]; Y[257] = [-0.93260094  0.16206101]
+
         ax[i].contourf(xx, yy, kde_results[i], cmap='terrain')
         ax[i].contour(xx, yy, kde_results[i], colors='gold')
         ax[i].set_title(r'KDE Prior $h=$' + str(h))
+    # plt.show()
+
+    # conditional mean
+    likelihood = __calculate_likelihood_of_2d_gaussian(x, Y, bandwidths[2]).reshape((Y.shape[0], -1))
+    prior = __calculate_kde(Y, Y, h)
+    cond_mean = np.sum(Y * prior * likelihood, axis=0) / np.sum(prior * likelihood, axis=0)
+    ax[2].plot(cond_mean[0], cond_mean[1], "*", color="black", markersize="8")
+    print('conditional mean: ', cond_mean[0], cond_mean[1])
+
+    # map
+    map = np.argmax(prior * likelihood, axis=0)
+    ax[2].plot(Y[map[0], 0], Y[map[1], 1], "+", color="black", markersize="8")
+    print('map: ', Y[map[0], 0], Y[map[1], 1])
+
+    # cond_mean = -0.43629,0.09552
+    # Y[108] = [-0.64147761  0.14104598]; Y[257] = [-0.93260094  0.16206101]
+
     plt.show()
-
-    x = __select_out_of_distribution_test_dataset(Y)
-    cond_mean = __calculate_conditional_mean(Y, bandwidths, h, x)
-
-
 
     """ End of your code
     """
@@ -60,17 +89,19 @@ def task2():
     return fig
 
 
-def __calculate_conditional_mean(Y, bandwidths, h, x):
-    likelihood = __calculate_likelihood_of_2d_gaussian(x, Y, bandwidths[1]).reshape((Y.shape[0], -1))
-    prior = __calculate_kde(Y, Y, h)
-    cond_mean = np.sum(Y * prior * likelihood) / np.sum(prior * likelihood)
-    return cond_mean
+# def __calculate_conditional_mean(Y, bandwidths, h, x):
+#     likelihood = __calculate_likelihood_of_2d_gaussian(x, Y, bandwidths[1]).reshape((Y.shape[0], -1))
+#     prior = __calculate_kde(Y, Y, h)
+#     cond_mean = np.sum(Y * prior * likelihood) / np.sum(prior * likelihood)
+#     return cond_mean
 
 
 def __select_out_of_distribution_test_dataset(Y):
-    x_dimensions = Y[:, 0]
-    outlier_indices = np.argmin(x_dimensions)
-    return Y[outlier_indices]
+    # x_dimensions = Y[:, 0]
+    # outlier_indices = np.argmin(x_dimensions)
+    # return Y[outlier_indices]
+
+    return [2, -0.5]
 
     # return x.reshape((x.shape[0], -1))
 
