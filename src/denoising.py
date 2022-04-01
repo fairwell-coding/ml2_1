@@ -13,6 +13,9 @@ import medmnist
 from matplotlib.backends.backend_pdf import PdfPages
 
 
+RANDOM_SEED = 41
+
+
 def task2():
     """ Bayesian Denoising - 2D Toytask
 
@@ -33,22 +36,43 @@ def task2():
     Y = __create_clean_data(n)
     bandwidths = [0.1, 0.25, 0.5]
     grid_positions, xx, yy = __create_2d_grid()
+    kde_results = []
 
     fig, ax = plt.subplots(1, 3, figsize=(14, 5))
     for i, h in enumerate(bandwidths):
         ax[i].plot(Y[:n, 0], Y[:n, 1], 'o', markersize="2", color="firebrick")
-        ax[i].plot(Y[n:2*n, 0], Y[n:2*n, 1], 'o', markersize="2", color="green")
+        ax[i].plot(Y[n:2*n, 0], Y[n:2*n, 1], 'o', markersize="2", color="lightgreen")
         ax[i].plot(Y[2*n:, 0], Y[2*n:, 1], 'o', markersize="2", color="blue")
-        kde_result = __calculate_kde(grid_positions, Y, h)
-        ax[i].contourf(xx, yy, kde_result, cmap='terrain')
-        ax[i].contour(xx, yy, kde_result, colors='gold')
+        kde_results.append(__calculate_kde(grid_positions, Y, h))
+        ax[i].contourf(xx, yy, kde_results[i], cmap='terrain')
+        ax[i].contour(xx, yy, kde_results[i], colors='gold')
         ax[i].set_title(r'KDE Prior $h=$' + str(h))
     plt.show()
+
+    x = __select_out_of_distribution_test_dataset(Y)
+    cond_mean = __calculate_conditional_mean(Y, bandwidths, h, x)
+
+
 
     """ End of your code
     """
 
     return fig
+
+
+def __calculate_conditional_mean(Y, bandwidths, h, x):
+    likelihood = __calculate_likelihood_of_2d_gaussian(x, Y, bandwidths[1]).reshape((Y.shape[0], -1))
+    prior = __calculate_kde(Y, Y, h)
+    cond_mean = np.sum(Y * prior * likelihood) / np.sum(prior * likelihood)
+    return cond_mean
+
+
+def __select_out_of_distribution_test_dataset(Y):
+    x_dimensions = Y[:, 0]
+    outlier_indices = np.argmin(x_dimensions)
+    return Y[outlier_indices]
+
+    # return x.reshape((x.shape[0], -1))
 
 
 def __create_2d_grid():
@@ -85,11 +109,14 @@ def __calculate_kde(y, Y, h):
 
     for i in np.arange(y.shape[0]):
         for j in np.arange(y.shape[1]):
-            kde[i, j] = 1 / Y.shape[0] * np.sum(1 / (2 * np.pi * h ** 2) * np.exp(- np.linalg.norm(y[i, j] - Y, axis=1, ord=2) ** 2 / (2 * h ** 2)))  # use KDE based on Gaussian kernel to
+            kde[i, j] = 1 / Y.shape[0] * np.sum(__calculate_likelihood_of_2d_gaussian(y[i, j], Y, h))  # use KDE based on Gaussian kernel to
             # create PDF
-            # kde[i, j] = 1 / Y.shape[0] * logsumexp_stable(1 / (2 * np.pi * h ** 2) * np.exp(- np.linalg.norm(y[i, j] - Y, axis=1, ord=2) / (2 * h ** 2)))
 
     return kde
+
+
+def __calculate_likelihood_of_2d_gaussian(y, Y, h):
+    return 1 / (2 * np.pi * h ** 2) * np.exp(- np.linalg.norm(y - Y, axis=1, ord=2) ** 2 / (2 * h ** 2))
 
 
 def task3():
@@ -124,6 +151,8 @@ def task3():
 
 
 if __name__ == '__main__':
+    np.random.seed(RANDOM_SEED)
+
     tasks = [task2, task3]
 
     pdf = PdfPages('figures.pdf')
