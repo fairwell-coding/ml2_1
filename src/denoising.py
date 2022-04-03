@@ -9,8 +9,9 @@ IMPORTANT:
 
 import numpy as np
 import matplotlib.pyplot as plt
-import medmnist
 from matplotlib.backends.backend_pdf import PdfPages
+from medmnist import ChestMNIST
+import medmnist
 
 
 RANDOM_SEED = 41
@@ -147,7 +148,16 @@ def __calculate_kde(y, Y, h):
 
 
 def __calculate_likelihood_of_2d_gaussian(y, Y, h):
+    """ Calculate likelihood of 2D Gaussian needed for task 2.
+    """
     return 1 / (2 * np.pi * h ** 2) * np.exp(- np.linalg.norm(y - Y, axis=1, ord=2) ** 2 / (2 * h ** 2))
+
+
+def __kde_using_log(N, y, Y, h):
+    """ Calculate KDE prior for 2D Gaussian using log of prior and likelihood needed for task 3 (see equation (10) from assignment sheet). Since D = 2 in the assignment the implemented formula here
+    already omits D and uses the resulting slightly simplified formula.
+    """
+    return np.log(np.sum(np.exp(- np.log(N) - np.log(2 * np.pi) - np.log(h) - np.linalg.norm(y - Y, axis=1, ord=2) / (2 * h**2))))
 
 
 def task3():
@@ -175,7 +185,40 @@ def task3():
 
     """ Start of your code
     """
-    
+
+    # Load ChestMNIST dataset
+    train_data = ChestMNIST('train', download=True).imgs
+    test_data = ChestMNIST('test', download=True).imgs
+
+    # Normalize images
+    train_data = train_data / 255
+    test_data = test_data / 255
+
+    # Randomly select N = 1000 training images for Y (uniform sampling)
+    train_indices = np.random.choice(len(train_data), 1000)
+    Y = train_data[train_indices]
+
+    # Randomly select M = 25 test images for X (uniform sampling)
+    test_indices = np.random.choice(len(test_data), 25)
+    X_clean = test_data[test_indices]
+
+    # Create test dataset x by adding pixel-wise zero-mean Gaussian noise with variance sigma^2 = {0.1, 1}
+    mu = [0.0, 0.0]
+    deviation = [0.1, 1]  # variance squared
+
+    noise_x_flattened = np.random.normal(mu[0], deviation[0], X_clean.shape[0] * X_clean.shape[1])  # flattened noise in x dimension
+    noise_y_flattened = np.random.normal(mu[1], deviation[1], X_clean.shape[0] * X_clean.shape[2])  # flattened noise in x dimension
+
+    noise_x = noise_x_flattened.reshape((X_clean.shape[0], X_clean.shape[1], -1))
+    noise_y = noise_y_flattened.reshape((X_clean.shape[0], -1, X_clean.shape[2]))
+
+    test_noise = noise_x * noise_y
+    X = X_clean + test_noise
+
+
+
+    plt.show()
+
     """ End of your code
     """
     return fig
@@ -184,7 +227,8 @@ def task3():
 if __name__ == '__main__':
     np.random.seed(RANDOM_SEED)
 
-    tasks = [task2, task3]
+    # tasks = [task2, task3]
+    tasks = [task3]
 
     pdf = PdfPages('figures.pdf')
     for task in tasks:
