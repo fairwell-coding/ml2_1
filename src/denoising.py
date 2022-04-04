@@ -222,26 +222,47 @@ def task3():
     X_clean = test_data[test_indices]
 
     # Create test dataset x by adding pixel-wise zero-mean Gaussian noise with variance sigma^2 = {0.1, 1}
-    mu = [0.0, 0.0]
-    deviation = [0.1, 1]  # variance squared
+    # mu = [0.0, 0.0]
+    # deviation = [0.1, 1]  # variance squared
+    #
+    # noise_x_flattened = np.random.normal(mu[0], deviation[0], X_clean.shape[0] * X_clean.shape[1])  # flattened noise in x dimension
+    # noise_y_flattened = np.random.normal(mu[1], deviation[1], X_clean.shape[0] * X_clean.shape[2])  # flattened noise in x dimension
+    #
+    # noise_x = noise_x_flattened.reshape((X_clean.shape[0], X_clean.shape[1], -1))
+    # noise_y = noise_y_flattened.reshape((X_clean.shape[0], -1, X_clean.shape[2]))
+    #
+    # test_noise = noise_x * noise_y
+    # X = X_clean + test_noise
 
-    noise_x_flattened = np.random.normal(mu[0], deviation[0], X_clean.shape[0] * X_clean.shape[1])  # flattened noise in x dimension
-    noise_y_flattened = np.random.normal(mu[1], deviation[1], X_clean.shape[0] * X_clean.shape[2])  # flattened noise in x dimension
-
-    noise_x = noise_x_flattened.reshape((X_clean.shape[0], X_clean.shape[1], -1))
-    noise_y = noise_y_flattened.reshape((X_clean.shape[0], -1, X_clean.shape[2]))
-
-    test_noise = noise_x * noise_y
-    X = X_clean + test_noise
+    X_1 = __create_noisy_test_data(X_clean, 0.0, 0.1)  # noisy test data with deviation = 0.1
+    X_2 = __create_noisy_test_data(X_clean, 0.0, 1)  # noisy test data with deviation = 1
 
     # KDE
     kde = __calculate_log_kde(Y, 0.1)
+
+    # Plot clean data, i.e. y*
+    ax[0, 0].imshow(__reshape_containing_all_subimages(X_clean))  # (25, 28, 28) -->> (5, 5, 28, 28) -->> (5 * 28, 5 * 28)
+    ax[1, 0].imshow(__reshape_containing_all_subimages(X_clean))  # (25, 28, 28) -->> (5, 5, 28, 28) -->> (5 * 28, 5 * 28)
+
+    # Plot noisy data, i.e. X
+    ax[0, 1].imshow(__reshape_containing_all_subimages(X_1))
+    ax[1, 1].imshow(__reshape_containing_all_subimages(X_2))
 
     plt.show()
 
     """ End of your code
     """
     return fig
+
+
+def __create_noisy_test_data(X_clean, mu, deviation):
+    noise_x_flattened = np.random.normal(mu, deviation, X_clean.shape[0] * X_clean.shape[1] * X_clean.shape[2])  # flattened noise for all images and both dimensions
+    test_noise = noise_x_flattened.reshape((X_clean.shape[0], X_clean.shape[1], X_clean.shape[2]))
+    return X_clean + test_noise
+
+
+def __reshape_containing_all_subimages(x):
+    return x.reshape((5, 5, x.shape[1], x.shape[2])).reshape((5 * x.shape[1], 5 * x.shape[2]))
 
 
 if __name__ == '__main__':
