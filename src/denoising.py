@@ -9,8 +9,10 @@ IMPORTANT:
 
 import numpy as np
 import matplotlib.pyplot as plt
-import medmnist
 from matplotlib.backends.backend_pdf import PdfPages
+from medmnist import ChestMNIST
+# import warnings
+# warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
 RANDOM_SEED = 41
@@ -141,7 +143,48 @@ def __calculate_kde(y, Y, h):
 
 
 def __calculate_likelihood_of_2d_gaussian(y, Y, h):
-    return 1 / (2 * np.pi * h ** 2) * np.exp(- np.linalg.norm(y - Y, axis=1, ord=2) ** 2 / (2 * h ** 2))
+    """ Calculate likelihood of 2D Gaussian needed for task 2.
+    """
+    return 1 / (2 * np.pi * h ** 2) * np.exp(- np.linalg.norm(y - Y, axis=1, ord=2) ** 2 / (2 * h ** 2))  # equation (7)
+
+
+def __calculate_log_kde(Y, h):
+    kde = np.ndarray((Y.shape[0], Y.shape[1], Y.shape[2]))
+
+    for image in np.arange(Y.shape[0]):
+        for i in np.arange(Y.shape[1]):
+            for j in np.arange(Y.shape[2]):
+                kde[image, i, j] = __kde_using_log(Y[image, i, j], Y[image], h)  # use log KDE based on Gaussian kernel to create PDF
+
+    return kde
+
+
+def __kde_using_log(y, Y, h):
+    """ Calculate KDE prior for 2D Gaussian using log of prior and likelihood needed for task 3 (see equation (10) from assignment sheet). Since D = 2 in the assignment the implemented formula here
+    already omits D and uses the resulting slightly simplified formula.
+    """
+    N = Y.shape[0]
+    D = Y.shape[0] * Y.shape[1]
+
+    return logsumexp_stable(- np.log(N) - D / 2 * np.log(2 * np.pi) - D * np.log(h) - np.linalg.norm(y - Y) / (2 * h ** 2))
+
+
+def __calculate_log_likelihood_for_all_test_images(X, Y, deviation):
+    log_likelihoods = np.ndarray((X.shape[0], Y.shape[0], Y.shape[1], Y.shape[2]))
+
+    for image in np.arange(Y.shape[0]):
+        log_likelihoods[:, image, :, :] = __calculate_log_likelihood_of_gaussian(X, Y[image], deviation)  # use log likelihoods
+
+    return log_likelihoods
+
+
+def __calculate_log_likelihood_of_gaussian(y, Y, deviation):
+    """ Calculate likelihood of 2D Gaussian needed for task 3.
+    """
+
+    D = Y.shape[0] * Y.shape[1]
+
+    return - D / 2 * np.log(2 * np.pi * deviation) - np.linalg.norm(Y - y) ** 2 / (2 * deviation)
 
 
 def task3():
@@ -169,16 +212,83 @@ def task3():
 
     """ Start of your code
     """
-    
+
+    # Load ChestMNIST dataset
+    train_data = ChestMNIST('train', download=True).imgs
+    test_data = ChestMNIST('test', download=True).imgs
+
+    # Normalize images
+    train_data = train_data / 255
+    test_data = test_data / 255
+
+    # Randomly select N = 1000 training images for Y (uniform sampling)
+    train_indices = np.random.choice(len(train_data), 1000)
+    Y = train_data[train_indices]
+
+    # Randomly select M = 25 test images for X (uniform sampling)
+    test_indices = np.random.choice(len(test_data), 25)
+    X_clean = test_data[test_indices]
+
+    deviation_1 = 0.1
+    deviation_2 = 1
+    X_1 = __create_noisy_test_data(X_clean, 0.0, deviation_1)  # noisy test data with deviation = 0.1
+    X_2 = __create_noisy_test_data(X_clean, 0.0, deviation_2)  # noisy test data with deviation = 1
+
+    # KDE
+    prior = __calculate_log_kde(Y, 0.1)
+
+    # Plot clean data, i.e. y*
+    ax[0, 0].imshow(__reshape_containing_all_subimages(X_clean))  # (25, 28, 28) -->> (5, 5, 28, 28) -->> (5 * 28, 5 * 28)
+    ax[1, 0].imshow(__reshape_containing_all_subimages(X_clean))  # (25, 28, 28) -->> (5, 5, 28, 28) -->> (5 * 28, 5 * 28)
+
+    # Plot noisy data, i.e. X
+    ax[0, 1].imshow(__reshape_containing_all_subimages(X_1))
+    ax[1, 1].imshow(__reshape_containing_all_subimages(X_2))
+
+    # calculate log likelihood
+    likelihood_1 = __calculate_log_likelihood_for_all_test_images(X_1, Y, deviation_1)
+    likelihood_2 = __calculate_log_likelihood_for_all_test_images(X_2, Y, deviation_2)
+
+    # conditional mean
+    cond_mean_1 = np.sum(Y * prior * likelihood_1, axis=1) / np.sum(prior * likelihood_1, axis=1)
+    cond_mean_2 = np.sum(Y * prior * likelihood_2, axis=1) / np.sum(prior * likelihood_2, axis=1)
+
+    ax[0, 2].imshow(__reshape_containing_all_subimages(cond_mean_1))
+    ax[1, 2].imshow(__reshape_containing_all_subimages(cond_mean_2))
+
+    # MAP
+    map1 = np.argmax(prior * likelihood_1, axis=1)
+    map2 = np.argmax(prior * likelihood_2, axis=1)
+
+    ax[0, 3].imshow(__reshape_containing_all_subimages(__get_argmax_pixel_values_from_training_samples(X_clean, Y, map1)))
+    ax[1, 3].imshow(__reshape_containing_all_subimages(__get_argmax_pixel_values_from_training_samples(X_clean, Y, map2)))
+
+    plt.show()
+
     """ End of your code
     """
     return fig
 
 
+def __get_argmax_pixel_values_from_training_samples(X, Y, map):
+    return Y.flatten()[map.flatten()].reshape((X.shape[0], X.shape[1], X.shape[2]))
+
+
+def __create_noisy_test_data(X_clean, mu, deviation):
+    noise_x_flattened = np.random.normal(mu, deviation, X_clean.shape[0] * X_clean.shape[1] * X_clean.shape[2])  # flattened noise for all images and both dimensions
+    test_noise = noise_x_flattened.reshape((X_clean.shape[0], X_clean.shape[1], X_clean.shape[2]))
+    return X_clean + test_noise
+
+
+def __reshape_containing_all_subimages(x):
+    return x.reshape((5, 5, x.shape[1], x.shape[2])).reshape((5 * x.shape[1], 5 * x.shape[2]))
+
+
 if __name__ == '__main__':
     np.random.seed(RANDOM_SEED)
 
-    tasks = [task2, task3]
+    # tasks = [task2, task3]
+    tasks = [task3]
 
     pdf = PdfPages('figures.pdf')
     for task in tasks:
