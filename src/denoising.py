@@ -11,7 +11,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from medmnist import ChestMNIST
-import medmnist
+import warnings
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
 RANDOM_SEED = 41
@@ -153,11 +154,27 @@ def __calculate_likelihood_of_2d_gaussian(y, Y, h):
     return 1 / (2 * np.pi * h ** 2) * np.exp(- np.linalg.norm(y - Y, axis=1, ord=2) ** 2 / (2 * h ** 2))
 
 
-def __kde_using_log(N, y, Y, h):
+def __calculate_log_kde(Y, h):
+    kde = np.ndarray((Y.shape[0], Y.shape[1], Y.shape[2]))
+
+    for image in np.arange(Y.shape[0]):
+        for i in np.arange(Y.shape[1]):
+            for j in np.arange(Y.shape[2]):
+                # print(f'y =  {Y[image, i, j]} | indices = {image}, {i}, {j}')
+
+                kde[image, i, j] = __kde_using_log(Y[image, i, j], Y[image], h)  # use log KDE based on Gaussian kernel to create PDF
+
+    return kde
+
+
+def __kde_using_log(y, Y, h):
     """ Calculate KDE prior for 2D Gaussian using log of prior and likelihood needed for task 3 (see equation (10) from assignment sheet). Since D = 2 in the assignment the implemented formula here
     already omits D and uses the resulting slightly simplified formula.
     """
-    return np.log(np.sum(np.exp(- np.log(N) - np.log(2 * np.pi) - np.log(h) - np.linalg.norm(y - Y, axis=1, ord=2) / (2 * h**2))))
+    N = Y.shape[0]
+    D = Y.shape[0] * Y.shape[1]
+
+    return np.log(np.sum(np.exp(- np.log(N) - D / 2 * np.log(2 * np.pi) - D * np.log(h) - np.linalg.norm(y - Y) / (2 * h**2))))
 
 
 def task3():
@@ -215,7 +232,8 @@ def task3():
     test_noise = noise_x * noise_y
     X = X_clean + test_noise
 
-
+    # KDE
+    kde = __calculate_log_kde(Y, 0.1)
 
     plt.show()
 
