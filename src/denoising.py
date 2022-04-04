@@ -41,22 +41,22 @@ def task2():
     x = __select_out_of_distribution_test_dataset(Y)
 
     for i, h in enumerate(bandwidths):
-        ax[i].plot(x[0], x[1], "x", color="black", markersize="8")
+        ax[i].plot(x[0], x[1], "X", color="black", markersize="7", label=r'$X_{outlier}$')
         ax[i].plot(Y[:n, 0], Y[:n, 1], 'o', markersize="2", color="firebrick")
         ax[i].plot(Y[n:2*n, 0], Y[n:2*n, 1], 'o', markersize="2", color="lightgreen")
         ax[i].plot(Y[2*n:, 0], Y[2*n:, 1], 'o', markersize="2", color="blue")
 
         Y_expected = np.mean(Y, axis=0)
-        ax[i].plot(Y_expected[0], Y_expected[1], 'H', markersize="8", color="purple")
+        ax[i].plot(Y_expected[0], Y_expected[1], 'H', markersize="7", color="purple", label=r'$\bar{Y}_{global}$')
         if i == 0:
             continue
         kde_results.append(__calculate_kde(grid_positions, Y, h))
         ax[i].contourf(xx, yy, kde_results[i-1], levels=10, cmap='terrain')
         ax[i].contour(xx, yy, kde_results[i-1], levels=10, colors='gold')
         ax[i].set_title(r'KDE Prior $h=$' + str(h))
+        
     # plt.show()
 
-    # conditional mean
     prior = np.zeros_like(Y)
     for i in [0, 1, 2, 3]:
         #h = 0.25
@@ -70,15 +70,17 @@ def task2():
             prior =  [1/N, 1/N]
         else: 
             prior = __calculate_kde(Y, Y, bandwidths[i])
+    
+        # conditional mean
         cond_mean = np.sum(Y * prior * likelihood, axis=0) / np.sum(prior * likelihood, axis=0)
-        ax[i].plot(cond_mean[0], cond_mean[1], "*", color="black", markersize="8")
+        ax[i].plot(cond_mean[0], cond_mean[1], "*", color="black", markersize="7", label=r'$\hat{y}_{CM}$')
         print('* conditional mean: ', cond_mean[0], cond_mean[1])
 
         # map
         map = np.argmax(prior * likelihood, axis=0)
-        ax[i].plot(Y[map[0], 0], Y[map[1], 1], "+", color="black", markersize="8")
+        ax[i].plot(Y[map[0], 0], Y[map[1], 1], "P", color="black", markersize="7", label=r'$\hat{y}_{MAP}$')
         print('+ map: ', Y[map[0], 0], Y[map[1], 1])
-
+        ax[i].legend()
     plt.show()
 
     """ End of your code
@@ -288,7 +290,7 @@ if __name__ == '__main__':
     np.random.seed(RANDOM_SEED)
 
     # tasks = [task2, task3]
-    tasks = [task3]
+    tasks = [task2]
 
     pdf = PdfPages('figures.pdf')
     for task in tasks:
