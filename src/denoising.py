@@ -11,8 +11,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from medmnist import ChestMNIST
-import warnings
-warnings.filterwarnings("ignore", category=RuntimeWarning)
+# import warnings
+# warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
 RANDOM_SEED = 41
@@ -174,7 +174,9 @@ def __kde_using_log(y, Y, h):
     N = Y.shape[0]
     D = Y.shape[0] * Y.shape[1]
 
-    return np.log(np.sum(np.exp(- np.log(N) - D / 2 * np.log(2 * np.pi) - D * np.log(h) - np.linalg.norm(y - Y) / (2 * h**2))))
+    # return np.log(np.sum(np.exp(- np.log(N) - D / 2 * np.log(2 * np.pi) - D * np.log(h) - np.linalg.norm(y - Y) / (2 * h**2))))
+
+    return logsumexp_stable(- np.log(N) - D / 2 * np.log(2 * np.pi) - D * np.log(h) - np.linalg.norm(y - Y) / (2 * h ** 2))
 
 
 def task3():
