@@ -94,7 +94,9 @@ def __select_out_of_distribution_test_dataset(Y):
     #Test points
     #x = [1, 0.57]
     #x = [1, 0.77]
+    
     x = [1, 0.37]
+    x = [0.74, 0.74]
     #x = [1, 0]
     #x = [0.9, 0.87]
     #x = [1, 0.87]
