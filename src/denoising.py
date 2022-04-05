@@ -94,7 +94,7 @@ def __select_out_of_distribution_test_dataset(Y):
     #Test points
     #x = [1, 0.57]
     #x = [1, 0.77]
-    #x = [1, 0.37]
+    x = [1, 0.37]
     #x = [1, 0]
     #x = [0.9, 0.87]
     #x = [1, 0.87]
@@ -102,7 +102,7 @@ def __select_out_of_distribution_test_dataset(Y):
     #x = [1, 2.5]
     #x = [1.5, 0]
 
-    return [0.74, 0.74]
+    return x #[0.74, 0.74]
 
 def __create_2d_grid():
     num_x = 100
@@ -237,7 +237,8 @@ def task3():
     X_2 = __create_noisy_test_data(X_clean, 0.0, deviation_2)  # noisy test data with deviation = 1
 
     # KDE
-    prior = __calculate_log_kde(Y, 0.1)
+    prior1 = __calculate_log_kde(Y, 0.1)
+    prior2 = __calculate_log_kde(Y, 1)
 
     # Plot clean data, i.e. y*
     ax[0, 0].imshow(__reshape_containing_all_subimages(X_clean))  # (25, 28, 28) -->> (5, 5, 28, 28) -->> (5 * 28, 5 * 28)
@@ -248,19 +249,19 @@ def task3():
     ax[1, 1].imshow(__reshape_containing_all_subimages(X_2))
 
     # calculate log likelihood
-    likelihood_1 = __calculate_log_likelihood_for_all_test_images(X_1, Y, deviation_1)
-    likelihood_2 = __calculate_log_likelihood_for_all_test_images(X_2, Y, deviation_2)
+    likelihood_1 = __calculate_log_likelihood_for_all_test_images(X_1, Y, 0.5)
+    likelihood_2 = __calculate_log_likelihood_for_all_test_images(X_2, Y, 0.75)
 
     # conditional mean
-    cond_mean_1 = np.sum(Y * prior * likelihood_1, axis=1) / np.sum(prior * likelihood_1, axis=1)
-    cond_mean_2 = np.sum(Y * prior * likelihood_2, axis=1) / np.sum(prior * likelihood_2, axis=1)
+    cond_mean_1 = np.sum(Y * prior1 * likelihood_1, axis=1) / np.sum(prior1 * likelihood_1, axis=1)
+    cond_mean_2 = np.sum(Y * prior2 * likelihood_2, axis=1) / np.sum(prior2 * likelihood_2, axis=1)
 
     ax[0, 2].imshow(__reshape_containing_all_subimages(cond_mean_1))
     ax[1, 2].imshow(__reshape_containing_all_subimages(cond_mean_2))
 
     # MAP
-    map1 = np.argmax(prior * likelihood_1, axis=1)
-    map2 = np.argmax(prior * likelihood_2, axis=1)
+    map1 = np.argmax(prior1 * likelihood_1, axis=1)
+    map2 = np.argmax(prior2 * likelihood_2, axis=1)
 
     ax[0, 3].imshow(__reshape_containing_all_subimages(__get_argmax_pixel_values_from_training_samples(X_clean, Y, map1)))
     ax[1, 3].imshow(__reshape_containing_all_subimages(__get_argmax_pixel_values_from_training_samples(X_clean, Y, map2)))
