@@ -163,10 +163,10 @@ def __kde_using_log(y, Y, h):
 
 
 def __calculate_log_likelihood_for_all_test_images(X, Y, deviation):
-    log_likelihoods = np.ndarray((X.shape[0], Y.shape[0], Y.shape[1], Y.shape[2]))
+    log_likelihoods = np.ndarray((X.shape[0], Y.shape[1], Y.shape[2]))
 
-    for image in np.arange(Y.shape[0]):
-        log_likelihoods[:, image, :, :] = __calculate_log_likelihood_of_gaussian(X, Y[image], deviation)  # use log likelihoods
+    for image in np.arange(X.shape[0]):
+        log_likelihoods[image, :, :] = __calculate_log_likelihood_of_gaussian(X[image], Y, deviation)  # use log likelihoods
 
     return log_likelihoods
 
@@ -177,7 +177,7 @@ def __calculate_log_likelihood_of_gaussian(y, Y, deviation):
 
     D = Y.shape[0] * Y.shape[1]
 
-    return - D / 2 * np.log(2 * np.pi * deviation) - np.linalg.norm(Y - y) ** 2 / (2 * deviation)
+    return - D / 2 * np.log(2 * np.pi * deviation) - np.linalg.norm(Y - y, axis=0) ** 2 / (2 * deviation)
 
 
 def task3():
@@ -247,16 +247,25 @@ def task3():
     likelihood_1 = __calculate_log_likelihood_for_all_test_images(X_1, Y, test_deviation_1)
     likelihood_2 = __calculate_log_likelihood_for_all_test_images(X_2, Y, test_deviation_2)
 
+    # prior_1 * likelihood_1[0]
+    # prior_1.reshape((1000, 1, 28, 28)) * likelihood_1.reshape((1, 25, 28, 28)) -->> 1000x25x28x28
+
     # conditional mean
-    cond_mean_1 = np.sum(Y * prior_1 * likelihood_1, axis=1) / np.sum(prior_1 * likelihood_1, axis=1)
-    cond_mean_2 = np.sum(Y * prior_2 * likelihood_2, axis=1) / np.sum(prior_2 * likelihood_2, axis=1)
+    Y_ = Y.reshape(1000, 1, 28, 28)
+    prior_1_ = prior_1.reshape((1000, 1, 28, 28))
+    likelihood_1_ = likelihood_1.reshape((1, 25, 28, 28))
+    prior_2_ = prior_2.reshape((1000, 1, 28, 28))
+    likelihood_2_ = likelihood_2.reshape((1, 25, 28, 28))
+
+    cond_mean_1 = np.sum(Y_ * prior_1_ * likelihood_1_, axis=0) / np.sum(prior_1_ * likelihood_1_, axis=0)
+    cond_mean_2 = np.sum(Y_ * prior_2_ * likelihood_2_, axis=0) / np.sum(prior_2_ * likelihood_2_, axis=0)
 
     ax[0, 2].imshow(__reshape_containing_all_subimages(cond_mean_1))
     ax[1, 2].imshow(__reshape_containing_all_subimages(cond_mean_2))
 
     # MAP
-    map1 = np.argmax(prior_1 * likelihood_1, axis=1)
-    map2 = np.argmax(prior_2 * likelihood_2, axis=1)
+    map1 = np.argmax(prior_1_ * likelihood_1_, axis=0)
+    map2 = np.argmax(prior_2_ * likelihood_2_, axis=0)
 
     ax[0, 3].imshow(__reshape_containing_all_subimages(__get_argmax_pixel_values_from_training_samples(X_clean, Y, map1)))
     ax[1, 3].imshow(__reshape_containing_all_subimages(__get_argmax_pixel_values_from_training_samples(X_clean, Y, map2)))
