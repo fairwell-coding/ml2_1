@@ -54,8 +54,6 @@ def task2():
         ax[i].contourf(xx, yy, kde_results[i-1], levels=10, cmap='terrain')
         ax[i].contour(xx, yy, kde_results[i-1], levels=10, colors='gold')
         ax[i].set_title(r'KDE Prior $h=$' + str(h))
-        
-    # plt.show()
 
     prior = np.zeros_like(Y)
     for i in [0, 1, 2, 3]:
@@ -77,9 +75,9 @@ def task2():
         print('* conditional mean: ', cond_mean[0], cond_mean[1])
 
         # map
-        map = np.argmax(prior * likelihood, axis=0)
-        ax[i].plot(Y[map[0], 0], Y[map[1], 1], "P", color="black", markersize="7", label=r'$\hat{y}_{MAP}$')
-        print('+ map: ', Y[map[0], 0], Y[map[1], 1])
+        map = np.argmax(prior * likelihood)
+        ax[i].plot(Y[map][0], Y[map][1], "P", color="black", markersize="7", label=r'$\hat{y}_{MAP}$')
+        print('+ map: ', Y[map][0], Y[map][1])
         ax[i].legend()
     plt.show()
 
@@ -291,7 +289,7 @@ if __name__ == '__main__':
     np.random.seed(RANDOM_SEED)
 
     # tasks = [task2, task3]
-    tasks = [task3]
+    tasks = [task2]
 
     pdf = PdfPages('figures.pdf')
     for task in tasks:
