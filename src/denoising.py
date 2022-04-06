@@ -11,8 +11,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from medmnist import ChestMNIST
-# import warnings
-# warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
 RANDOM_SEED = 41
@@ -35,7 +33,7 @@ def task2():
     n = int(N / 3)
 
     Y = __create_clean_data(n)
-    bandwidths = [0, 0.1, 0.2 , 0.5]  # [0.1, 0.2, 0.5] [0.1, 0.25, 0.5]
+    bandwidths = [0, 0.1, 0.25, 0.5]  # [0.1, 0.2, 0.5] [0.1, 0.25, 0.5]
     grid_positions, xx, yy = __create_2d_grid()
     kde_results = []
     x = __select_out_of_distribution_test_dataset(Y)
@@ -57,12 +55,7 @@ def task2():
 
     prior = np.zeros_like(Y)
     for i in [0, 1, 2, 3]:
-        #h = 0.25
-        #h = 0.5
-        #h = 0.5
         h = 1
-        #h = 4
-
         likelihood = __calculate_likelihood_of_2d_gaussian(x, Y, h).reshape((Y.shape[0], -1))
         if i == 0:
             prior = [1/N, 1/N]  # dirac measure
@@ -246,9 +239,13 @@ def task3():
     ax[0, 1].imshow(__reshape_containing_all_subimages(X_1))
     ax[1, 1].imshow(__reshape_containing_all_subimages(X_2))
 
+    # Choose suitable deviation for test samples
+    test_deviation_1 = 0.2
+    test_deviation_2 = 0.1
+
     # calculate log likelihood
-    likelihood_1 = __calculate_log_likelihood_for_all_test_images(X_1, Y, deviation_1)
-    likelihood_2 = __calculate_log_likelihood_for_all_test_images(X_2, Y, deviation_2)
+    likelihood_1 = __calculate_log_likelihood_for_all_test_images(X_1, Y, test_deviation_1)
+    likelihood_2 = __calculate_log_likelihood_for_all_test_images(X_2, Y, test_deviation_2)
 
     # conditional mean
     cond_mean_1 = np.sum(Y * prior_1 * likelihood_1, axis=1) / np.sum(prior_1 * likelihood_1, axis=1)
@@ -289,7 +286,7 @@ if __name__ == '__main__':
     np.random.seed(RANDOM_SEED)
 
     # tasks = [task2, task3]
-    tasks = [task2]
+    tasks = [task3]
 
     pdf = PdfPages('figures.pdf')
     for task in tasks:
