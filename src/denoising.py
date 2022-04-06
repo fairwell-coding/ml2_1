@@ -279,7 +279,22 @@ def __create_noisy_test_data(X_clean, mu, deviation):
 
 
 def __reshape_containing_all_subimages(x):
-    return x.reshape((5, 5, x.shape[1], x.shape[2])).reshape((5 * x.shape[1], 5 * x.shape[2]))
+    img_matrix = np.zeros((5 * 28, 5 * 28))
+
+    img_size = 28
+    row = 0
+    last_index = 0
+    for i in range(5):
+        if i == 0:
+            img_matrix[0:img_size, :] = np.hstack(x[0:5, :])  # X_clean[i:(1+i)]
+            row = img_size
+            last_index = 5
+        else:
+            img_matrix[row:row + img_size, :] = np.hstack(x[last_index:last_index + 5, :])  # X_clean[i:(1+i)]
+            last_index = last_index + 5
+            row = row + img_size
+
+    return img_matrix
 
 
 if __name__ == '__main__':
