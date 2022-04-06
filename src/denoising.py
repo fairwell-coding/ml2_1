@@ -67,7 +67,7 @@ def task2():
 
         likelihood = __calculate_likelihood_of_2d_gaussian(x, Y, h).reshape((Y.shape[0], -1))
         if i == 0:
-            prior =  [1/N, 1/N]
+            prior = [1/N, 1/N]  # dirac measure
         else: 
             prior = __calculate_kde(Y, Y, bandwidths[i])
     
@@ -94,9 +94,7 @@ def __select_out_of_distribution_test_dataset(Y):
     #Test points
     #x = [1, 0.57]
     #x = [1, 0.77]
-    
-    x = [1, 0.37]
-    x = [0.74, 0.74]
+    #x = [1, 0.37]
     #x = [1, 0]
     #x = [0.9, 0.87]
     #x = [1, 0.87]
@@ -104,7 +102,7 @@ def __select_out_of_distribution_test_dataset(Y):
     #x = [1, 2.5]
     #x = [1.5, 0]
 
-    return x #[0.74, 0.74]
+    return [0.74, 0.74]
 
 def __create_2d_grid():
     num_x = 100
@@ -233,14 +231,14 @@ def task3():
     test_indices = np.random.choice(len(test_data), 25)
     X_clean = test_data[test_indices]
 
-    deviation_1 = 0.1
-    deviation_2 = 1
+    deviation_1 = 0.1  # used for both Gaussian noise and KDE prior
+    deviation_2 = 1  # used for both Gaussian noise and KDE prior
     X_1 = __create_noisy_test_data(X_clean, 0.0, deviation_1)  # noisy test data with deviation = 0.1
     X_2 = __create_noisy_test_data(X_clean, 0.0, deviation_2)  # noisy test data with deviation = 1
 
     # KDE
-    prior1 = __calculate_log_kde(Y, 0.1)
-    prior2 = __calculate_log_kde(Y, 1)
+    prior_1 = __calculate_log_kde(Y, deviation_1)
+    prior_2 = __calculate_log_kde(Y, deviation_2)
 
     # Plot clean data, i.e. y*
     ax[0, 0].imshow(__reshape_containing_all_subimages(X_clean))  # (25, 28, 28) -->> (5, 5, 28, 28) -->> (5 * 28, 5 * 28)
@@ -251,19 +249,19 @@ def task3():
     ax[1, 1].imshow(__reshape_containing_all_subimages(X_2))
 
     # calculate log likelihood
-    likelihood_1 = __calculate_log_likelihood_for_all_test_images(X_1, Y, 0.5)
-    likelihood_2 = __calculate_log_likelihood_for_all_test_images(X_2, Y, 0.75)
+    likelihood_1 = __calculate_log_likelihood_for_all_test_images(X_1, Y, deviation_1)
+    likelihood_2 = __calculate_log_likelihood_for_all_test_images(X_2, Y, deviation_2)
 
     # conditional mean
-    cond_mean_1 = np.sum(Y * prior1 * likelihood_1, axis=1) / np.sum(prior1 * likelihood_1, axis=1)
-    cond_mean_2 = np.sum(Y * prior2 * likelihood_2, axis=1) / np.sum(prior2 * likelihood_2, axis=1)
+    cond_mean_1 = np.sum(Y * prior_1 * likelihood_1, axis=1) / np.sum(prior_1 * likelihood_1, axis=1)
+    cond_mean_2 = np.sum(Y * prior_2 * likelihood_2, axis=1) / np.sum(prior_2 * likelihood_2, axis=1)
 
     ax[0, 2].imshow(__reshape_containing_all_subimages(cond_mean_1))
     ax[1, 2].imshow(__reshape_containing_all_subimages(cond_mean_2))
 
     # MAP
-    map1 = np.argmax(prior1 * likelihood_1, axis=1)
-    map2 = np.argmax(prior2 * likelihood_2, axis=1)
+    map1 = np.argmax(prior_1 * likelihood_1, axis=1)
+    map2 = np.argmax(prior_2 * likelihood_2, axis=1)
 
     ax[0, 3].imshow(__reshape_containing_all_subimages(__get_argmax_pixel_values_from_training_samples(X_clean, Y, map1)))
     ax[1, 3].imshow(__reshape_containing_all_subimages(__get_argmax_pixel_values_from_training_samples(X_clean, Y, map2)))
@@ -293,7 +291,7 @@ if __name__ == '__main__':
     np.random.seed(RANDOM_SEED)
 
     # tasks = [task2, task3]
-    tasks = [task2]
+    tasks = [task3]
 
     pdf = PdfPages('figures.pdf')
     for task in tasks:
