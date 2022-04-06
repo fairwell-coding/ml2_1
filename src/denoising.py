@@ -247,9 +247,6 @@ def task3():
     likelihood_1 = __calculate_log_likelihood_for_all_test_images(X_1, Y, test_deviation_1)
     likelihood_2 = __calculate_log_likelihood_for_all_test_images(X_2, Y, test_deviation_2)
 
-    # prior_1 * likelihood_1[0]
-    # prior_1.reshape((1000, 1, 28, 28)) * likelihood_1.reshape((1, 25, 28, 28)) -->> 1000x25x28x28
-
     # conditional mean
     Y_ = Y.reshape(1000, 1, 28, 28)
     prior_1_ = prior_1.reshape((1000, 1, 28, 28))
@@ -309,8 +306,7 @@ def __reshape_containing_all_subimages(x):
 if __name__ == '__main__':
     np.random.seed(RANDOM_SEED)
 
-    # tasks = [task2, task3]
-    tasks = [task3]
+    tasks = [task2, task3]
 
     pdf = PdfPages('figures.pdf')
     for task in tasks:
